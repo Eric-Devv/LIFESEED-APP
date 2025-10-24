@@ -1,118 +1,261 @@
 import { useEffect, useState } from 'react';
-import * as SQLite from 'expo-sqlite';
-import { createTables, User, JournalEntry, Goal } from '../database/schema';
+import { databaseService, User, Goal, Mood, Habit, Journal } from '../database/db';
 
 export const useDatabase = () => {
-  const [db, setDb] = useState<SQLite.SQLiteDatabase | null>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const initDatabase = async () => {
       try {
-        const database = await SQLite.openDatabaseAsync('lifeseed.db');
-        createTables(database);
-        setDb(database);
+        await databaseService.initDatabase();
+        setIsInitialized(true);
       } catch (error) {
         console.error('Error initializing database:', error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
     initDatabase();
   }, []);
 
-  const createUser = async (user: Omit<User, 'id' | 'createdAt' | 'updatedAt'>) => {
-    if (!db) return null;
-
-    const id = Date.now().toString();
-    const now = new Date().toISOString();
-
+  // User methods
+  const createUser = async (user: Omit<User, 'uid'>) => {
+    if (!isInitialized) return null;
     try {
-      await db.runAsync(
-        'INSERT INTO users (id, email, name, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?)',
-        [id, user.email, user.name, now, now]
-      );
-      return { id, ...user, createdAt: now, updatedAt: now };
+      await databaseService.insertUser(user);
+      return user;
     } catch (error) {
       console.error('Error creating user:', error);
       return null;
     }
   };
 
-  const createJournalEntry = async (entry: Omit<JournalEntry, 'id' | 'createdAt' | 'updatedAt'>) => {
-    if (!db) return null;
-
-    const id = Date.now().toString();
-    const now = new Date().toISOString();
-
+  const getUser = async (uid: string) => {
+    if (!isInitialized) return null;
     try {
-      await db.runAsync(
-        'INSERT INTO journal_entries (id, userId, title, content, mood, tags, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-        [id, entry.userId, entry.title, entry.content, entry.mood, JSON.stringify(entry.tags), now, now]
-      );
-      return { id, ...entry, createdAt: now, updatedAt: now };
+      return await databaseService.getUser(uid);
     } catch (error) {
-      console.error('Error creating journal entry:', error);
+      console.error('Error getting user:', error);
       return null;
     }
   };
 
-  const getJournalEntries = async (userId: string): Promise<JournalEntry[]> => {
-    if (!db) return [];
-
+  const updateUser = async (uid: string, updates: Partial<User>) => {
+    if (!isInitialized) return false;
     try {
-      const result = await db.getAllAsync(
-        'SELECT * FROM journal_entries WHERE userId = ? ORDER BY createdAt DESC',
-        [userId]
-      );
-      return result.map((row: any) => ({
-        ...row,
-        tags: JSON.parse(row.tags),
-      }));
+      await databaseService.updateUser(uid, updates);
+      return true;
     } catch (error) {
-      console.error('Error fetching journal entries:', error);
-      return [];
+      console.error('Error updating user:', error);
+      return false;
     }
   };
 
-  const createGoal = async (goal: Omit<Goal, 'id' | 'createdAt' | 'updatedAt'>) => {
-    if (!db) return null;
-
-    const id = Date.now().toString();
-    const now = new Date().toISOString();
-
+  // Goal methods
+  const createGoal = async (goal: Omit<Goal, 'id'>) => {
+    if (!isInitialized) return null;
     try {
-      await db.runAsync(
-        'INSERT INTO goals (id, userId, title, description, targetDate, status, progress, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-        [id, goal.userId, goal.title, goal.description, goal.targetDate, goal.status, goal.progress, now, now]
-      );
-      return { id, ...goal, createdAt: now, updatedAt: now };
+      const id = await databaseService.insertGoal(goal);
+      return { id, ...goal };
     } catch (error) {
       console.error('Error creating goal:', error);
       return null;
     }
   };
 
-  const getGoals = async (userId: string): Promise<Goal[]> => {
-    if (!db) return [];
-
+  const getGoals = async (filters?: any) => {
+    if (!isInitialized) return [];
     try {
-      const result = await db.getAllAsync(
-        'SELECT * FROM goals WHERE userId = ? ORDER BY createdAt DESC',
-        [userId]
-      );
-      return result;
+      return await databaseService.getGoals(filters);
     } catch (error) {
-      console.error('Error fetching goals:', error);
+      console.error('Error getting goals:', error);
       return [];
     }
   };
 
+  const updateGoal = async (id: number, updates: Partial<Goal>) => {
+    if (!isInitialized) return false;
+    try {
+      await databaseService.updateGoal(id, updates);
+      return true;
+    } catch (error) {
+      console.error('Error updating goal:', error);
+      return false;
+    }
+  };
+
+  const deleteGoal = async (id: number) => {
+    if (!isInitialized) return false;
+    try {
+      await databaseService.deleteGoal(id);
+      return true;
+    } catch (error) {
+      console.error('Error deleting goal:', error);
+      return false;
+    }
+  };
+
+  // Mood methods
+  const createMood = async (mood: Omit<Mood, 'id'>) => {
+    if (!isInitialized) return null;
+    try {
+      const id = await databaseService.insertMood(mood);
+      return { id, ...mood };
+    } catch (error) {
+      console.error('Error creating mood:', error);
+      return null;
+    }
+  };
+
+  const getMoods = async (filters?: any) => {
+    if (!isInitialized) return [];
+    try {
+      return await databaseService.getMoods(filters);
+    } catch (error) {
+      console.error('Error getting moods:', error);
+      return [];
+    }
+  };
+
+  const updateMood = async (id: number, updates: Partial<Mood>) => {
+    if (!isInitialized) return false;
+    try {
+      await databaseService.updateMood(id, updates);
+      return true;
+    } catch (error) {
+      console.error('Error updating mood:', error);
+      return false;
+    }
+  };
+
+  const deleteMood = async (id: number) => {
+    if (!isInitialized) return false;
+    try {
+      await databaseService.deleteMood(id);
+      return true;
+    } catch (error) {
+      console.error('Error deleting mood:', error);
+      return false;
+    }
+  };
+
+  // Habit methods
+  const createHabit = async (habit: Omit<Habit, 'id'>) => {
+    if (!isInitialized) return null;
+    try {
+      const id = await databaseService.insertHabit(habit);
+      return { id, ...habit };
+    } catch (error) {
+      console.error('Error creating habit:', error);
+      return null;
+    }
+  };
+
+  const getHabits = async (filters?: any) => {
+    if (!isInitialized) return [];
+    try {
+      return await databaseService.getHabits(filters);
+    } catch (error) {
+      console.error('Error getting habits:', error);
+      return [];
+    }
+  };
+
+  const updateHabit = async (id: number, updates: Partial<Habit>) => {
+    if (!isInitialized) return false;
+    try {
+      await databaseService.updateHabit(id, updates);
+      return true;
+    } catch (error) {
+      console.error('Error updating habit:', error);
+      return false;
+    }
+  };
+
+  const deleteHabit = async (id: number) => {
+    if (!isInitialized) return false;
+    try {
+      await databaseService.deleteHabit(id);
+      return true;
+    } catch (error) {
+      console.error('Error deleting habit:', error);
+      return false;
+    }
+  };
+
+  // Journal methods
+  const createJournalEntry = async (journal: Omit<Journal, 'id'>) => {
+    if (!isInitialized) return null;
+    try {
+      const id = await databaseService.insertJournalEntry(journal);
+      return { id, ...journal };
+    } catch (error) {
+      console.error('Error creating journal entry:', error);
+      return null;
+    }
+  };
+
+  const getJournalEntries = async (filters?: any) => {
+    if (!isInitialized) return [];
+    try {
+      return await databaseService.getJournalEntries(filters);
+    } catch (error) {
+      console.error('Error getting journal entries:', error);
+      return [];
+    }
+  };
+
+  const updateJournalEntry = async (id: number, updates: Partial<Journal>) => {
+    if (!isInitialized) return false;
+    try {
+      await databaseService.updateJournalEntry(id, updates);
+      return true;
+    } catch (error) {
+      console.error('Error updating journal entry:', error);
+      return false;
+    }
+  };
+
+  const deleteJournalEntry = async (id: number) => {
+    if (!isInitialized) return false;
+    try {
+      await databaseService.deleteJournalEntry(id);
+      return true;
+    } catch (error) {
+      console.error('Error deleting journal entry:', error);
+      return false;
+    }
+  };
+
   return {
-    db,
+    isInitialized,
+    isLoading,
+    // User methods
     createUser,
-    createJournalEntry,
-    getJournalEntries,
+    getUser,
+    updateUser,
+    // Goal methods
     createGoal,
     getGoals,
+    updateGoal,
+    deleteGoal,
+    // Mood methods
+    createMood,
+    getMoods,
+    updateMood,
+    deleteMood,
+    // Habit methods
+    createHabit,
+    getHabits,
+    updateHabit,
+    deleteHabit,
+    // Journal methods
+    createJournalEntry,
+    getJournalEntries,
+    updateJournalEntry,
+    deleteJournalEntry,
   };
 };
 

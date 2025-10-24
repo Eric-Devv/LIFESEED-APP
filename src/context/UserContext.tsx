@@ -36,7 +36,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const { createUser, db } = useDatabase();
+  const { createUser, getUser, updateUser, isInitialized } = useDatabase();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -55,10 +55,12 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             await SecureStore.setItemAsync(STORAGE_KEYS.USER_PROFILE, JSON.stringify(profile));
             
             // Cache in SQLite
-            if (db) {
+            if (isInitialized) {
               await createUser({
+                uid: profile.id,
                 email: profile.email,
                 name: profile.name,
+                createdAt: profile.createdAt,
               });
             }
           }

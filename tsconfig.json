@@ -4,24 +4,43 @@
     "strict": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"],
-      "@/components/*": ["src/components/*"],
-      "@/screens/*": ["src/screens/*"],
-      "@/hooks/*": ["src/hooks/*"],
-      "@/context/*": ["src/context/*"],
-      "@/database/*": ["src/database/*"],
-      "@/firebase/*": ["src/firebase/*"],
-      "@/ai/*": ["src/ai/*"],
-      "@/utils/*": ["src/utils/*"],
-      "@/services/*": ["src/services/*"],
-      "@/assets/*": ["src/assets/*"]
+      "@/*": [
+        "src/*"
+      ],
+      "@/components/*": [
+        "src/components/*"
+      ],
+      "@/screens/*": [
+        "src/screens/*"
+      ],
+      "@/hooks/*": [
+        "src/hooks/*"
+      ],
+      "@/context/*": [
+        "src/context/*"
+      ],
+      "@/database/*": [
+        "src/database/*"
+      ],
+      "@/firebase/*": [
+        "src/firebase/*"
+      ],
+      "@/ai/*": [
+        "src/ai/*"
+      ],
+      "@/utils/*": [
+        "src/utils/*"
+      ],
+      "@/services/*": [
+        "src/services/*"
+      ],
+      "@/assets/*": [
+        "src/assets/*"
+      ]
     }
   },
   "include": [
     "**/*.ts",
-    "**/*.tsx",
-    ".expo/types/**/*.ts",
-    "expo-env.d.ts"
+    "**/*.tsx"
   ]
 }
-

@@ -1,19 +1,80 @@
 import React from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Provider as PaperProvider } from 'react-native-paper';
+import { NavigationContainer } from '@react-navigation/native';
+import { createStackNavigator } from '@react-navigation/stack';
 import { ThemeProvider } from './src/context/ThemeContext';
-import TestScreen from './src/screens/TestScreen';
+import { UserProvider, useUser } from './src/context/UserContext';
+import LoginScreen from './src/screens/LoginScreen';
+import RegisterScreen from './src/screens/RegisterScreen';
+import ForgotPasswordScreen from './src/screens/ForgotPasswordScreen';
+import HomeScreen from './src/screens/HomeScreen';
+import ProfileScreen from './src/screens/ProfileScreen';
+import LoadingSpinner from './src/components/LoadingSpinner';
+
+const Stack = createStackNavigator();
+
+const AuthNavigator = () => (
+  <Stack.Navigator
+    screenOptions={{
+      headerShown: false,
+    }}
+  >
+    <Stack.Screen name="Login" component={LoginScreen} />
+    <Stack.Screen name="Register" component={RegisterScreen} />
+    <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+  </Stack.Navigator>
+);
+
+const AppNavigator = () => (
+  <Stack.Navigator
+    screenOptions={{
+      headerShown: true,
+      headerStyle: {
+        elevation: 0,
+        shadowOpacity: 0,
+      },
+    }}
+  >
+    <Stack.Screen 
+      name="Home" 
+      component={HomeScreen}
+      options={{ title: 'Lifeseed' }}
+    />
+    <Stack.Screen 
+      name="Profile" 
+      component={ProfileScreen}
+      options={{ title: 'Profile' }}
+    />
+  </Stack.Navigator>
+);
+
+const AppContent = () => {
+  const { user, loading } = useUser();
+
+  if (loading) {
+    return <LoadingSpinner message="Loading..." />;
+  }
+
+  return (
+    <NavigationContainer>
+      {user ? <AppNavigator /> : <AuthNavigator />}
+    </NavigationContainer>
+  );
+};
 
 export default function App() {
   return (
     <ThemeProvider>
-      <PaperProvider>
-        <View style={styles.container}>
-          <TestScreen />
-          <StatusBar style="auto" />
-        </View>
-      </PaperProvider>
+      <UserProvider>
+        <PaperProvider>
+          <View style={styles.container}>
+            <AppContent />
+            <StatusBar style="auto" />
+          </View>
+        </PaperProvider>
+      </UserProvider>
     </ThemeProvider>
   );
 }

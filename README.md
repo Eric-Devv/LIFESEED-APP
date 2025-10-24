@@ -126,5 +126,9 @@ npm run ios
 
 ## License
 
-This project is licensed under the MIT License.
+Copyright 2025 ERIMTECH Solutions. All Rights Reserved.
+
+This software is the private and proprietary property of ERIMTECH Solutions and is licensed to users under a separate End-User License Agreement (EULA).
+
+Unauthorized reproduction, modification, distribution, or commercial use is strictly prohibited.
 

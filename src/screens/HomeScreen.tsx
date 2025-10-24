@@ -1,16 +1,30 @@
 import React from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
-import { Text, Card, Button, FAB } from 'react-native-paper';
+import { Text, Card, Button, FAB, Appbar } from 'react-native-paper';
 import { useTheme } from '../context/ThemeContext';
+import { useUser } from '../context/UserContext';
 
-const HomeScreen: React.FC = () => {
+interface HomeScreenProps {
+  navigation: any;
+}
+
+const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const { theme } = useTheme();
+  const { userProfile } = useUser();
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <Appbar.Header style={{ backgroundColor: theme.colors.surface }}>
+        <Appbar.Content title="Lifeseed" />
+        <Appbar.Action 
+          icon="account" 
+          onPress={() => navigation.navigate('Profile')}
+        />
+      </Appbar.Header>
+      
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={[styles.title, { color: theme.colors.text }]}>
-          Welcome to Lifeseed
+          Welcome back, {userProfile?.name || 'User'}!
         </Text>
         
         <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>

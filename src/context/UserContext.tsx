@@ -4,6 +4,7 @@ import { doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
 import * as SecureStore from 'expo-secure-store';
 import { auth, db } from '../firebase/config';
 import { useDatabase } from '../hooks/useDatabase';
+import { syncService } from '../services/syncService';
 
 export interface UserProfile {
   id: string;
@@ -63,6 +64,9 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 createdAt: profile.createdAt,
               });
             }
+
+            // Pull user data from Firestore
+            await syncService.pullUserData(firebaseUser.uid);
           }
         } catch (error) {
           console.error('Error loading user profile:', error);

@@ -77,7 +77,10 @@ export class DatabaseService {
         description TEXT,
         progress INTEGER DEFAULT 0,
         completed BOOLEAN DEFAULT 0,
-        timestamp TEXT NOT NULL
+        timestamp TEXT NOT NULL,
+        needsSync BOOLEAN DEFAULT 1,
+        lastModified TEXT,
+        firebaseId TEXT
       )`,
       
       // Moods table
@@ -86,7 +89,10 @@ export class DatabaseService {
         emotion TEXT NOT NULL,
         intensity INTEGER NOT NULL CHECK (intensity >= 1 AND intensity <= 10),
         note TEXT,
-        date TEXT NOT NULL
+        date TEXT NOT NULL,
+        needsSync BOOLEAN DEFAULT 1,
+        lastModified TEXT,
+        firebaseId TEXT
       )`,
       
       // Habits table
@@ -94,7 +100,10 @@ export class DatabaseService {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
         streak INTEGER DEFAULT 0,
-        lastUpdated TEXT NOT NULL
+        lastUpdated TEXT NOT NULL,
+        needsSync BOOLEAN DEFAULT 1,
+        lastModified TEXT,
+        firebaseId TEXT
       )`,
       
       // Journal table
@@ -102,7 +111,10 @@ export class DatabaseService {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         entry TEXT NOT NULL,
         mood TEXT,
-        date TEXT NOT NULL
+        date TEXT NOT NULL,
+        needsSync BOOLEAN DEFAULT 1,
+        lastModified TEXT,
+        firebaseId TEXT
       )`
     ];
 

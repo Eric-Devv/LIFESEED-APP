@@ -163,6 +163,16 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
           >
             Delete Account
           </Button>
+          
+          <Button
+            mode="outlined"
+            onPress={() => navigation.navigate('Settings')}
+            style={[styles.actionButton, { borderColor: theme.colors.primary }]}
+            textColor={theme.colors.primary}
+            icon="cog"
+          >
+            Settings
+          </Button>
         </Card.Content>
       </Card>
 

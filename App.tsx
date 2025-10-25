@@ -11,6 +11,7 @@ import RegisterScreen from './src/screens/RegisterScreen';
 import ForgotPasswordScreen from './src/screens/ForgotPasswordScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
+import SettingsScreen from './src/screens/SettingsScreen';
 import LoadingSpinner from './src/components/LoadingSpinner';
 
 const Stack = createStackNavigator();
@@ -46,6 +47,11 @@ const AppNavigator = () => (
       name="Profile" 
       component={ProfileScreen}
       options={{ title: 'Profile' }}
+    />
+    <Stack.Screen 
+      name="Settings" 
+      component={SettingsScreen}
+      options={{ title: 'Settings' }}
     />
   </Stack.Navigator>
 );

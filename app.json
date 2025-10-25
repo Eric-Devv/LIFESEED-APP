@@ -27,10 +27,12 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-     /*expo-sqlite*/
-     /*expo-constants*/
+     /* "expo-sqlite",*/
+     /*"expo-constants",*/
       "expo-notifications",
-      "expo-secure-store"
+      "expo-secure-store",
+     /* "expo-task-manager",*/
+     /* "expo-background-fetch"*/
     ]
   }
 }

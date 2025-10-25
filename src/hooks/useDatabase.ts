@@ -1,9 +1,19 @@
 import { useEffect, useState } from 'react';
 import { databaseService, User, Goal, Mood, Habit, Journal } from '../database/db';
+import { syncService } from '../services/syncService';
 
 export const useDatabase = () => {
   const [isInitialized, setIsInitialized] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Helper function to mark records for sync
+  const markForSync = async (collection: string, id: number) => {
+    try {
+      await syncService.markForSync(collection, id);
+    } catch (error) {
+      console.error(`Failed to mark ${collection} record for sync:`, error);
+    }
+  };
 
   useEffect(() => {
     const initDatabase = async () => {
@@ -58,6 +68,8 @@ export const useDatabase = () => {
     if (!isInitialized) return null;
     try {
       const id = await databaseService.insertGoal(goal);
+      // Mark for sync
+      await markForSync('goals', id);
       return { id, ...goal };
     } catch (error) {
       console.error('Error creating goal:', error);
@@ -79,6 +91,8 @@ export const useDatabase = () => {
     if (!isInitialized) return false;
     try {
       await databaseService.updateGoal(id, updates);
+      // Mark for sync
+      await markForSync('goals', id);
       return true;
     } catch (error) {
       console.error('Error updating goal:', error);
@@ -102,6 +116,7 @@ export const useDatabase = () => {
     if (!isInitialized) return null;
     try {
       const id = await databaseService.insertMood(mood);
+      await markForSync('moods', id);
       return { id, ...mood };
     } catch (error) {
       console.error('Error creating mood:', error);
@@ -123,6 +138,7 @@ export const useDatabase = () => {
     if (!isInitialized) return false;
     try {
       await databaseService.updateMood(id, updates);
+      await markForSync('moods', id);
       return true;
     } catch (error) {
       console.error('Error updating mood:', error);
@@ -146,6 +162,7 @@ export const useDatabase = () => {
     if (!isInitialized) return null;
     try {
       const id = await databaseService.insertHabit(habit);
+      await markForSync('habits', id);
       return { id, ...habit };
     } catch (error) {
       console.error('Error creating habit:', error);
@@ -167,6 +184,7 @@ export const useDatabase = () => {
     if (!isInitialized) return false;
     try {
       await databaseService.updateHabit(id, updates);
+      await markForSync('habits', id);
       return true;
     } catch (error) {
       console.error('Error updating habit:', error);
@@ -190,6 +208,7 @@ export const useDatabase = () => {
     if (!isInitialized) return null;
     try {
       const id = await databaseService.insertJournalEntry(journal);
+      await markForSync('journal', id);
       return { id, ...journal };
     } catch (error) {
       console.error('Error creating journal entry:', error);
@@ -211,6 +230,7 @@ export const useDatabase = () => {
     if (!isInitialized) return false;
     try {
       await databaseService.updateJournalEntry(id, updates);
+      await markForSync('journal', id);
       return true;
     } catch (error) {
       console.error('Error updating journal entry:', error);

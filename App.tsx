@@ -12,6 +12,10 @@ import ForgotPasswordScreen from './src/screens/ForgotPasswordScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
+import JournalScreen from './src/screens/JournalScreen';
+import MoodTrackerScreen from './src/screens/MoodTrackerScreen';
+import GoalTrackerScreen from './src/screens/GoalTrackerScreen';
+import HabitScreen from './src/screens/HabitScreen';
 import LoadingSpinner from './src/components/LoadingSpinner';
 
 const Stack = createStackNavigator();
@@ -52,6 +56,26 @@ const AppNavigator = () => (
       name="Settings" 
       component={SettingsScreen}
       options={{ title: 'Settings' }}
+    />
+    <Stack.Screen 
+      name="Journal" 
+      component={JournalScreen}
+      options={{ title: 'Journal' }}
+    />
+    <Stack.Screen 
+      name="MoodTracker" 
+      component={MoodTrackerScreen}
+      options={{ title: 'Mood Tracker' }}
+    />
+    <Stack.Screen 
+      name="GoalTracker" 
+      component={GoalTrackerScreen}
+      options={{ title: 'Goal Tracker' }}
+    />
+    <Stack.Screen 
+      name="Habits" 
+      component={HabitScreen}
+      options={{ title: 'Habits' }}
     />
   </Stack.Navigator>
 );

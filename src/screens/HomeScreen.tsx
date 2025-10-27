@@ -38,9 +38,27 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             <Button 
               mode="contained" 
               style={[styles.button, { backgroundColor: theme.colors.primary }]}
-              onPress={() => {}}
+              onPress={() => navigation.navigate('Journal')}
             >
               Start Journaling
+            </Button>
+          </Card.Content>
+        </Card>
+
+        <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
+          <Card.Content>
+            <Text style={[styles.cardTitle, { color: theme.colors.text }]}>
+              Mood Tracker
+            </Text>
+            <Text style={[styles.cardText, { color: theme.colors.text }]}>
+              Track your emotions and see patterns over time.
+            </Text>
+            <Button 
+              mode="outlined" 
+              style={styles.button}
+              onPress={() => navigation.navigate('MoodTracker')}
+            >
+              Track Mood
             </Button>
           </Card.Content>
         </Card>
@@ -56,7 +74,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             <Button 
               mode="outlined" 
               style={styles.button}
-              onPress={() => {}}
+              onPress={() => navigation.navigate('GoalTracker')}
             >
               View Goals
             </Button>
@@ -66,17 +84,17 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
           <Card.Content>
             <Text style={[styles.cardTitle, { color: theme.colors.text }]}>
-              AI Insights
+              Habit Builder
             </Text>
             <Text style={[styles.cardText, { color: theme.colors.text }]}>
-              Get personalized insights from your journal entries.
+              Build positive habits and track your streaks.
             </Text>
             <Button 
               mode="outlined" 
               style={styles.button}
-              onPress={() => {}}
+              onPress={() => navigation.navigate('Habits')}
             >
-              View Insights
+              Manage Habits
             </Button>
           </Card.Content>
         </Card>

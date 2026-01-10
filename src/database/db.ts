@@ -38,6 +38,19 @@ export interface Journal {
   date: string;
 }
 
+export interface Insight {
+  id?: number;
+  type: string;
+  title: string;
+  description: string;
+  data?: string;
+  confidence?: number;
+  createdAt: string;
+  needsSync?: boolean;
+  lastModified?: string;
+  firebaseId?: string;
+}
+
 export interface DatabaseFilters {
   [key: string]: any;
 }
@@ -112,6 +125,20 @@ export class DatabaseService {
         entry TEXT NOT NULL,
         mood TEXT,
         date TEXT NOT NULL,
+        needsSync BOOLEAN DEFAULT 1,
+        lastModified TEXT,
+        firebaseId TEXT
+      )`,
+      
+      // Insights table
+      `CREATE TABLE IF NOT EXISTS insights (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        type TEXT NOT NULL,
+        title TEXT NOT NULL,
+        description TEXT NOT NULL,
+        data TEXT,
+        confidence REAL DEFAULT 0.7,
+        createdAt TEXT NOT NULL,
         needsSync BOOLEAN DEFAULT 1,
         lastModified TEXT,
         firebaseId TEXT
@@ -302,6 +329,28 @@ export class DatabaseService {
 
   async deleteJournalEntry(id: number): Promise<void> {
     await this.deleteData('journal', id);
+  }
+
+  // Insights-specific methods
+  async insertInsight(insight: Omit<Insight, 'id'>): Promise<number> {
+    return await this.insertData('insights', insight);
+  }
+
+  async getInsights(filters?: DatabaseFilters): Promise<Insight[]> {
+    const insights = await this.getData('insights', filters);
+    return insights.map(insight => ({
+      ...insight,
+      confidence: insight.confidence || 0.7,
+      data: insight.data ? (typeof insight.data === 'string' ? JSON.parse(insight.data) : insight.data) : undefined,
+    }));
+  }
+
+  async updateInsight(id: number, updates: Partial<Insight>): Promise<void> {
+    await this.updateData('insights', updates, id);
+  }
+
+  async deleteInsight(id: number): Promise<void> {
+    await this.deleteData('insights', id);
   }
 
   // Utility methods

@@ -16,6 +16,8 @@ import JournalScreen from './src/screens/JournalScreen';
 import MoodTrackerScreen from './src/screens/MoodTrackerScreen';
 import GoalTrackerScreen from './src/screens/GoalTrackerScreen';
 import HabitScreen from './src/screens/HabitScreen';
+import InsightsScreen from './src/screens/InsightsScreen';
+import AIMentorChat from './src/screens/AIMentorChat';
 import LoadingSpinner from './src/components/LoadingSpinner';
 
 const Stack = createStackNavigator();
@@ -76,6 +78,16 @@ const AppNavigator = () => (
       name="Habits" 
       component={HabitScreen}
       options={{ title: 'Habits' }}
+    />
+    <Stack.Screen 
+      name="Insights" 
+      component={InsightsScreen}
+      options={{ title: 'AI Insights' }}
+    />
+    <Stack.Screen 
+      name="AIMentor" 
+      component={AIMentorChat}
+      options={{ title: 'AI Mentor' }}
     />
   </Stack.Navigator>
 );

@@ -98,6 +98,42 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             </Button>
           </Card.Content>
         </Card>
+
+        <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
+          <Card.Content>
+            <Text style={[styles.cardTitle, { color: theme.colors.text }]}>
+              AI Insights
+            </Text>
+            <Text style={[styles.cardText, { color: theme.colors.text }]}>
+              Discover patterns and get personalized recommendations from AI.
+            </Text>
+            <Button 
+              mode="outlined" 
+              style={styles.button}
+              onPress={() => navigation.navigate('Insights')}
+            >
+              View Insights
+            </Button>
+          </Card.Content>
+        </Card>
+
+        <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
+          <Card.Content>
+            <Text style={[styles.cardTitle, { color: theme.colors.text }]}>
+              AI Mentor
+            </Text>
+            <Text style={[styles.cardText, { color: theme.colors.text }]}>
+              Chat with your AI mentor for personalized life advice.
+            </Text>
+            <Button 
+              mode="outlined" 
+              style={styles.button}
+              onPress={() => navigation.navigate('AIMentor')}
+            >
+              Chat with Mentor
+            </Button>
+          </Card.Content>
+        </Card>
       </ScrollView>
 
       <FAB

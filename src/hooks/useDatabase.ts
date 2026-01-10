@@ -249,6 +249,52 @@ export const useDatabase = () => {
     }
   };
 
+  // Insight methods
+  const createInsight = async (insight: Omit<import('../database/db').Insight, 'id'>) => {
+    if (!isInitialized) return null;
+    try {
+      const id = await databaseService.insertInsight(insight);
+      await markForSync('insights', id);
+      return { id, ...insight };
+    } catch (error) {
+      console.error('Error creating insight:', error);
+      return null;
+    }
+  };
+
+  const getInsights = async (filters?: any) => {
+    if (!isInitialized) return [];
+    try {
+      return await databaseService.getInsights(filters);
+    } catch (error) {
+      console.error('Error getting insights:', error);
+      return [];
+    }
+  };
+
+  const updateInsight = async (id: number, updates: Partial<import('../database/db').Insight>) => {
+    if (!isInitialized) return false;
+    try {
+      await databaseService.updateInsight(id, updates);
+      await markForSync('insights', id);
+      return true;
+    } catch (error) {
+      console.error('Error updating insight:', error);
+      return false;
+    }
+  };
+
+  const deleteInsight = async (id: number) => {
+    if (!isInitialized) return false;
+    try {
+      await databaseService.deleteInsight(id);
+      return true;
+    } catch (error) {
+      console.error('Error deleting insight:', error);
+      return false;
+    }
+  };
+
   return {
     isInitialized,
     isLoading,
@@ -276,6 +322,11 @@ export const useDatabase = () => {
     getJournalEntries,
     updateJournalEntry,
     deleteJournalEntry,
+    // Insight methods
+    createInsight,
+    getInsights,
+    updateInsight,
+    deleteInsight,
   };
 };
 

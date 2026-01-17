@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, Alert, TextInput as RNTextInput } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, StyleSheet, ScrollView, Alert, TextInput as RNTextInput, Animated } from 'react-native';
 import {
   Text,
   Card,
@@ -13,11 +13,13 @@ import {
   TextInput,
   Portal,
   Dialog,
+  Surface,
 } from 'react-native-paper';
 import { useTheme } from '../context/ThemeContext';
 import { useUser } from '../context/UserContext';
 import { syncService, SyncStatus } from '../services/syncService';
 import NetInfo from '@react-native-community/netinfo';
+import { scale, moderateScale, getPadding } from '../utils/responsive';
 
 interface SettingsScreenProps {
   navigation: any;
@@ -211,18 +213,32 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
     return 'Offline';
   };
 
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 400,
+      useNativeDriver: true,
+    }).start();
+  }, []);
+
   return (
     <ScrollView
       style={[styles.container, { backgroundColor: theme.colors.background }]}
-      contentContainerStyle={styles.content}
+      contentContainerStyle={[styles.content, { padding: getPadding() }]}
+      showsVerticalScrollIndicator={false}
     >
-      <Title style={[styles.title, { color: theme.colors.text }]}>Settings</Title>
+      <Animated.View style={{ opacity: fadeAnim }}>
+        <Title style={[styles.title, { color: theme.colors.text, fontSize: moderateScale(28, 0.3) }]}>
+          Settings
+        </Title>
 
-      {/* Account Section */}
-      <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
-        <Card.Content>
-          <Title>Account</Title>
-          <List.Item
+        {/* Account Section */}
+        <Surface style={[styles.modernCard, { backgroundColor: theme.colors.surface, borderRadius: scale(20), marginBottom: scale(16) }]}>
+          <View style={{ padding: scale(16) }}>
+            <Title style={{ fontSize: moderateScale(20, 0.3), marginBottom: scale(12) }}>Account</Title>
+            <List.Item
             title={userProfile?.name || 'User'}
             description={userProfile?.email || user?.email}
             left={(props) => <List.Icon {...props} icon="account" />}
@@ -232,28 +248,28 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
               </Button>
             )}
           />
-        </Card.Content>
-      </Card>
+          </View>
+        </Surface>
 
-      {/* Theme Section */}
-      <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
-        <Card.Content>
-          <Title>Appearance</Title>
-          <List.Item
-            title="Dark Mode"
-            description={isDark ? 'Dark theme enabled' : 'Light theme enabled'}
-            left={(props) => <List.Icon {...props} icon={isDark ? 'weather-night' : 'weather-sunny'} />}
-            right={() => (
-              <Switch value={isDark} onValueChange={toggleTheme} color={theme.colors.primary} />
-            )}
-          />
-        </Card.Content>
-      </Card>
+        {/* Theme Section */}
+        <Surface style={[styles.modernCard, { backgroundColor: theme.colors.surface, borderRadius: scale(20), marginBottom: scale(16) }]}>
+          <View style={{ padding: scale(16) }}>
+            <Title style={{ fontSize: moderateScale(20, 0.3), marginBottom: scale(12) }}>Appearance</Title>
+            <List.Item
+              title="Dark Mode"
+              description={isDark ? 'Dark theme enabled' : 'Light theme enabled'}
+              left={(props) => <List.Icon {...props} icon={isDark ? 'weather-night' : 'weather-sunny'} />}
+              right={() => (
+                <Switch value={isDark} onValueChange={toggleTheme} color={theme.colors.primary} />
+              )}
+            />
+          </View>
+        </Surface>
 
-      {/* Sync Status */}
-      <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
-        <Card.Content>
-          <Title>Sync Status</Title>
+        {/* Sync Status */}
+        <Surface style={[styles.modernCard, { backgroundColor: theme.colors.surface, borderRadius: scale(20), marginBottom: scale(16) }]}>
+          <View style={{ padding: scale(16) }}>
+            <Title style={{ fontSize: moderateScale(20, 0.3), marginBottom: scale(12) }}>Sync Status</Title>
           <View style={styles.statusRow}>
             <Text style={[styles.statusLabel, { color: theme.colors.text }]}>Status:</Text>
             <View style={styles.statusIndicator}>
@@ -277,13 +293,13 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
               {syncStatus.pendingSync} records
             </Text>
           </View>
-        </Card.Content>
-      </Card>
+          </View>
+        </Surface>
 
-      {/* Sync Controls */}
-      <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
-        <Card.Content>
-          <Title>Data Sync</Title>
+        {/* Sync Controls */}
+        <Surface style={[styles.modernCard, { backgroundColor: theme.colors.surface, borderRadius: scale(20), marginBottom: scale(16) }]}>
+          <View style={{ padding: scale(16) }}>
+            <Title style={{ fontSize: moderateScale(20, 0.3), marginBottom: scale(12) }}>Data Sync</Title>
 
           <List.Item
             title="Auto Sync"
@@ -320,13 +336,13 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
           >
             Restore Data
           </Button>
-        </Card.Content>
-      </Card>
+          </View>
+        </Surface>
 
-      {/* Danger Zone */}
-      <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
-        <Card.Content>
-          <Title style={{ color: '#F44336' }}>Danger Zone</Title>
+        {/* Danger Zone */}
+        <Surface style={[styles.modernCard, { backgroundColor: theme.colors.surface, borderRadius: scale(20), marginBottom: scale(16) }]}>
+          <View style={{ padding: scale(16) }}>
+            <Title style={{ color: '#F44336', fontSize: moderateScale(20, 0.3), marginBottom: scale(12) }}>Danger Zone</Title>
           <Button
             mode="contained"
             onPress={handleDeleteAccount}
@@ -335,8 +351,9 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
           >
             Delete Account
           </Button>
-        </Card.Content>
-      </Card>
+          </View>
+        </Surface>
+      </Animated.View>
 
       {/* Loading Overlay */}
       {isLoading && (
@@ -400,17 +417,17 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    padding: 16,
+    // padding handled inline
   },
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: '700',
     textAlign: 'center',
-    marginBottom: 16,
+    marginBottom: scale(24),
+    letterSpacing: 0.5,
   },
-  card: {
-    marginBottom: 16,
+  modernCard: {
     elevation: 4,
+    overflow: 'hidden',
   },
   statusRow: {
     flexDirection: 'row',

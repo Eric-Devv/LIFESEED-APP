@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, Alert } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, StyleSheet, ScrollView, Alert, Animated } from 'react-native';
 import { 
   Text, 
   Card, 
@@ -13,11 +13,14 @@ import {
   Dialog,
   Paragraph,
   IconButton,
-  Chip
+  Chip,
+  Surface
 } from 'react-native-paper';
 import * as Notifications from 'expo-notifications';
 import { useTheme } from '../context/ThemeContext';
 import { useDatabase } from '../hooks/useDatabase';
+import SuccessAnimation from '../components/SuccessAnimation';
+import { scale, moderateScale, getPadding } from '../utils/responsive';
 
 interface GoalTrackerScreenProps {
   navigation: any;
@@ -51,6 +54,8 @@ const GoalTrackerScreen: React.FC<GoalTrackerScreenProps> = ({ navigation }) => 
   const [showGoalDialog, setShowGoalDialog] = useState(false);
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     loadGoals();
@@ -107,7 +112,24 @@ const GoalTrackerScreen: React.FC<GoalTrackerScreenProps> = ({ navigation }) => 
       await loadGoals();
       resetForm();
       setShowGoalDialog(false);
-      Alert.alert('Success', 'Goal saved successfully!');
+      
+      // Show success animation
+      setShowSuccess(true);
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+      
+      setTimeout(() => {
+        Animated.timing(fadeAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }).start(() => {
+          setShowSuccess(false);
+        });
+      }, 2000);
     } catch (error) {
       console.error('Error saving goal:', error);
       Alert.alert('Error', 'Failed to save goal');
@@ -209,13 +231,29 @@ const GoalTrackerScreen: React.FC<GoalTrackerScreenProps> = ({ navigation }) => 
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <ScrollView contentContainerStyle={styles.content}>
-        <Title style={[styles.title, { color: theme.colors.text }]}>
+      {showSuccess && (
+        <Animated.View
+          style={[
+            styles.successOverlay,
+            {
+              opacity: fadeAnim,
+            },
+          ]}
+        >
+          <SuccessAnimation size={scale(120)} />
+        </Animated.View>
+      )}
+      
+      <ScrollView 
+        contentContainerStyle={[styles.content, { padding: getPadding() }]}
+        showsVerticalScrollIndicator={false}
+      >
+        <Title style={[styles.title, { color: theme.colors.text, fontSize: moderateScale(28, 0.3) }]}>
           Goal Tracker
         </Title>
 
         {/* Stats Overview */}
-        <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
+        <Surface style={[styles.modernCard, { backgroundColor: theme.colors.surface, borderRadius: scale(20), marginBottom: scale(16) }]}>
           <Card.Content>
             <Title>Goal Statistics</Title>
             <View style={styles.statsContainer}>
@@ -256,17 +294,17 @@ const GoalTrackerScreen: React.FC<GoalTrackerScreenProps> = ({ navigation }) => 
         </Card>
 
         {/* Goals List */}
-        <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
-          <Card.Content>
-            <Title>Your Goals</Title>
+        <Surface style={[styles.modernCard, { backgroundColor: theme.colors.surface, borderRadius: scale(20), marginBottom: scale(16) }]}>
+          <View style={{ padding: scale(16) }}>
+            <Title style={{ fontSize: moderateScale(20, 0.3), marginBottom: scale(16) }}>Your Goals</Title>
             {goals.length === 0 ? (
-              <Paragraph style={[styles.emptyText, { color: theme.colors.text }]}>
+              <Paragraph style={[styles.emptyText, { color: theme.colors.text, fontSize: moderateScale(14, 0.3) }]}>
                 No goals set yet. Tap the + button to create your first goal!
               </Paragraph>
             ) : (
               goals.map((goal) => (
-                <Card key={goal.id} style={[styles.goalCard, { backgroundColor: theme.colors.background }]}>
-                  <Card.Content>
+                <Surface key={goal.id} style={[styles.goalCard, { backgroundColor: theme.colors.background, borderRadius: scale(16), marginBottom: scale(12) }]}>
+                  <View style={{ padding: scale(16) }}>
                     <View style={styles.goalHeader}>
                       <View style={styles.goalInfo}>
                         <Text style={[styles.goalTitle, { color: theme.colors.text }]}>
@@ -339,12 +377,12 @@ const GoalTrackerScreen: React.FC<GoalTrackerScreenProps> = ({ navigation }) => 
                         {goal.completed ? 'Completed' : 'In Progress'}
                       </Chip>
                     </View>
-                  </Card.Content>
-                </Card>
+                  </View>
+                </Surface>
               ))
             )}
-          </Card.Content>
-        </Card>
+          </View>
+        </Surface>
       </ScrollView>
 
       {/* Floating Action Button */}
@@ -439,18 +477,28 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    padding: 16,
-    paddingBottom: 80,
+    paddingBottom: scale(80),
   },
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: '700',
     textAlign: 'center',
-    marginBottom: 16,
+    marginBottom: scale(24),
+    letterSpacing: 0.5,
   },
-  card: {
-    marginBottom: 16,
+  modernCard: {
     elevation: 4,
+    overflow: 'hidden',
+  },
+  successOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
   },
   statsContainer: {
     flexDirection: 'row',

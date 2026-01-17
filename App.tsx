@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View } from 'react-native';
 import { Provider as PaperProvider } from 'react-native-paper';
 import { NavigationContainer } from '@react-navigation/native';
-import { createStackNavigator } from '@react-navigation/stack';
+import { createStackNavigator, TransitionPresets } from '@react-navigation/stack';
 import { ThemeProvider } from './src/context/ThemeContext';
 import { UserProvider, useUser } from './src/context/UserContext';
 import LoginScreen from './src/screens/LoginScreen';
@@ -18,7 +18,10 @@ import GoalTrackerScreen from './src/screens/GoalTrackerScreen';
 import HabitScreen from './src/screens/HabitScreen';
 import InsightsScreen from './src/screens/InsightsScreen';
 import AIMentorChat from './src/screens/AIMentorChat';
+import SplashScreen from './src/screens/SplashScreen';
+import OnboardingFlow, { hasCompletedOnboarding } from './src/screens/OnboardingFlow';
 import LoadingSpinner from './src/components/LoadingSpinner';
+import OfflineIndicator from './src/components/OfflineIndicator';
 
 const Stack = createStackNavigator();
 
@@ -26,6 +29,21 @@ const AuthNavigator = () => (
   <Stack.Navigator
     screenOptions={{
       headerShown: false,
+      ...TransitionPresets.SlideFromRightIOS,
+      cardStyleInterpolator: ({ current, layouts }) => {
+        return {
+          cardStyle: {
+            transform: [
+              {
+                translateX: current.progress.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [layouts.screen.width, 0],
+                }),
+              },
+            ],
+          },
+        };
+      },
     }}
   >
     <Stack.Screen name="Login" component={LoginScreen} />
@@ -41,6 +59,25 @@ const AppNavigator = () => (
       headerStyle: {
         elevation: 0,
         shadowOpacity: 0,
+      },
+      ...TransitionPresets.SlideFromRightIOS,
+      cardStyleInterpolator: ({ current, layouts }) => {
+        return {
+          cardStyle: {
+            transform: [
+              {
+                translateX: current.progress.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [layouts.screen.width, 0],
+                }),
+              },
+            ],
+            opacity: current.progress.interpolate({
+              inputRange: [0, 0.5, 1],
+              outputRange: [0, 0.5, 1],
+            }),
+          },
+        };
       },
     }}
   >
@@ -94,9 +131,32 @@ const AppNavigator = () => (
 
 const AppContent = () => {
   const { user, loading } = useUser();
+  const [showSplash, setShowSplash] = useState(true);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [isCheckingOnboarding, setIsCheckingOnboarding] = useState(true);
 
-  if (loading) {
+  useEffect(() => {
+    const checkOnboarding = async () => {
+      if (!loading) {
+        const completed = await hasCompletedOnboarding();
+        setShowOnboarding(!completed);
+        setIsCheckingOnboarding(false);
+      }
+    };
+
+    checkOnboarding();
+  }, [loading]);
+
+  if (loading || isCheckingOnboarding) {
     return <LoadingSpinner message="Loading..." />;
+  }
+
+  if (showSplash) {
+    return <SplashScreen onFinish={() => setShowSplash(false)} />;
+  }
+
+  if (showOnboarding && !user) {
+    return <OnboardingFlow onComplete={() => setShowOnboarding(false)} />;
   }
 
   return (
@@ -113,6 +173,7 @@ export default function App() {
         <PaperProvider>
           <View style={styles.container}>
             <AppContent />
+            <OfflineIndicator />
             <StatusBar style="auto" />
           </View>
         </PaperProvider>

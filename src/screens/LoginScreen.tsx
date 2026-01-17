@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, Alert } from 'react-native';
-import { Text, TextInput, Button, Card, Title, Paragraph } from 'react-native-paper';
+import React, { useState, useRef, useEffect } from 'react';
+import { View, StyleSheet, ScrollView, Alert, Animated } from 'react-native';
+import { Text, TextInput, Button, Card, Title, Paragraph, Surface } from 'react-native-paper';
 import { useTheme } from '../context/ThemeContext';
 import { useUser } from '../context/UserContext';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { scale, moderateScale, getPadding } from '../utils/responsive';
 
 interface LoginScreenProps {
   navigation: any;
@@ -15,6 +16,23 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(30)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
@@ -44,19 +62,34 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
   return (
     <ScrollView 
       style={[styles.container, { backgroundColor: theme.colors.background }]}
-      contentContainerStyle={styles.content}
+      contentContainerStyle={[styles.content, { padding: getPadding() }]}
+      showsVerticalScrollIndicator={false}
     >
-      <View style={styles.header}>
-        <Title style={[styles.title, { color: theme.colors.text }]}>
+      <Animated.View
+        style={[
+          styles.header,
+          {
+            opacity: fadeAnim,
+            transform: [{ translateY: slideAnim }],
+          },
+        ]}
+      >
+        <Title style={[styles.title, { color: theme.colors.text, fontSize: moderateScale(32, 0.3) }]}>
           Welcome Back
         </Title>
-        <Paragraph style={[styles.subtitle, { color: theme.colors.text }]}>
+        <Paragraph style={[styles.subtitle, { color: theme.colors.text, fontSize: moderateScale(16, 0.3) }]}>
           Sign in to continue your growth journey
         </Paragraph>
-      </View>
+      </Animated.View>
 
-      <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
-        <Card.Content style={styles.form}>
+      <Animated.View
+        style={{
+          opacity: fadeAnim,
+          transform: [{ translateY: slideAnim }],
+        }}
+      >
+        <Surface style={[styles.modernCard, { backgroundColor: theme.colors.surface, borderRadius: scale(24) }]}>
+          <View style={[styles.form, { padding: scale(24) }]}>
           <TextInput
             label="Email"
             value={email}
@@ -106,10 +139,19 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
           >
             Forgot Password?
           </Button>
-        </Card.Content>
-      </Card>
+          </View>
+        </Surface>
+      </Animated.View>
 
-      <View style={styles.footer}>
+      <Animated.View
+        style={[
+          styles.footer,
+          {
+            opacity: fadeAnim,
+            transform: [{ translateY: slideAnim }],
+          },
+        ]}
+      >
         <Text style={[styles.footerText, { color: theme.colors.text }]}>
           Don't have an account?{' '}
         </Text>
@@ -121,7 +163,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
         >
           Sign Up
         </Button>
-      </View>
+      </Animated.View>
     </ScrollView>
   );
 };
@@ -132,40 +174,40 @@ const styles = StyleSheet.create({
   },
   content: {
     flexGrow: 1,
-    padding: 16,
     justifyContent: 'center',
   },
   header: {
     alignItems: 'center',
-    marginBottom: 32,
+    marginBottom: scale(40),
   },
   title: {
-    fontSize: 28,
-    fontWeight: 'bold',
+    fontWeight: '700',
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: scale(8),
+    letterSpacing: 0.5,
   },
   subtitle: {
-    fontSize: 16,
     textAlign: 'center',
     opacity: 0.8,
+    letterSpacing: 0.3,
   },
-  card: {
-    elevation: 4,
-    marginBottom: 24,
+  modernCard: {
+    elevation: 8,
+    marginBottom: scale(24),
   },
   form: {
-    padding: 16,
+    // padding handled inline
   },
   input: {
-    marginBottom: 16,
+    marginBottom: scale(16),
   },
   button: {
-    marginTop: 8,
-    marginBottom: 16,
+    marginTop: scale(8),
+    marginBottom: scale(16),
+    borderRadius: scale(28),
   },
   buttonContent: {
-    paddingVertical: 8,
+    paddingVertical: scale(8),
   },
   linkButton: {
     alignSelf: 'center',
@@ -174,9 +216,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
+    marginTop: scale(16),
   },
   footerText: {
-    fontSize: 16,
+    fontSize: moderateScale(16, 0.3),
   },
 });
 

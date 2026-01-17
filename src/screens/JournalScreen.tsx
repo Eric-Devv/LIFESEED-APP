@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, Alert } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, StyleSheet, ScrollView, Alert, Animated } from 'react-native';
 import { 
   Text, 
   Card, 
@@ -12,11 +12,14 @@ import {
   Portal,
   Dialog,
   Paragraph,
-  IconButton
+  IconButton,
+  Surface
 } from 'react-native-paper';
 import { Calendar } from 'react-native-calendars';
 import { useTheme } from '../context/ThemeContext';
 import { useDatabase } from '../hooks/useDatabase';
+import SuccessAnimation from '../components/SuccessAnimation';
+import { scale, moderateScale, getPadding } from '../utils/responsive';
 
 interface JournalScreenProps {
   navigation: any;
@@ -51,6 +54,8 @@ const JournalScreen: React.FC<JournalScreenProps> = ({ navigation }) => {
   const [showEntryDialog, setShowEntryDialog] = useState(false);
   const [editingEntry, setEditingEntry] = useState<JournalEntry | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     loadEntries();
@@ -98,7 +103,24 @@ const JournalScreen: React.FC<JournalScreenProps> = ({ navigation }) => {
       await loadEntries();
       resetForm();
       setShowEntryDialog(false);
-      Alert.alert('Success', 'Journal entry saved successfully!');
+      
+      // Show success animation
+      setShowSuccess(true);
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+      
+      setTimeout(() => {
+        Animated.timing(fadeAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }).start(() => {
+          setShowSuccess(false);
+        });
+      }, 2000);
     } catch (error) {
       console.error('Error saving journal entry:', error);
       Alert.alert('Error', 'Failed to save journal entry');
@@ -187,15 +209,31 @@ const JournalScreen: React.FC<JournalScreenProps> = ({ navigation }) => {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <ScrollView contentContainerStyle={styles.content}>
-        <Title style={[styles.title, { color: theme.colors.text }]}>
+      {showSuccess && (
+        <Animated.View
+          style={[
+            styles.successOverlay,
+            {
+              opacity: fadeAnim,
+            },
+          ]}
+        >
+          <SuccessAnimation size={scale(120)} />
+        </Animated.View>
+      )}
+      
+      <ScrollView 
+        contentContainerStyle={[styles.content, { padding: getPadding() }]}
+        showsVerticalScrollIndicator={false}
+      >
+        <Title style={[styles.title, { color: theme.colors.text, fontSize: moderateScale(28, 0.3) }]}>
           Daily Journal
         </Title>
 
         {/* Calendar */}
-        <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
-          <Card.Content>
-            <Title>Calendar</Title>
+        <Surface style={[styles.modernCard, { backgroundColor: theme.colors.surface, borderRadius: scale(20), marginBottom: scale(16) }]}>
+          <View style={{ padding: scale(16) }}>
+            <Title style={{ fontSize: moderateScale(20, 0.3), marginBottom: scale(12) }}>Calendar</Title>
             <Calendar
               current={selectedDate}
               onDayPress={(day) => setSelectedDate(day.dateString)}
@@ -228,21 +266,21 @@ const JournalScreen: React.FC<JournalScreenProps> = ({ navigation }) => {
                 textDayHeaderFontSize: 13
               }}
             />
-          </Card.Content>
-        </Card>
+          </View>
+        </Surface>
 
         {/* Selected Date Entries */}
-        <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
-          <Card.Content>
-            <Title>{formatDate(selectedDate)}</Title>
+        <Surface style={[styles.modernCard, { backgroundColor: theme.colors.surface, borderRadius: scale(20), marginBottom: scale(16) }]}>
+          <View style={{ padding: scale(16) }}>
+            <Title style={{ fontSize: moderateScale(20, 0.3), marginBottom: scale(12) }}>{formatDate(selectedDate)}</Title>
             {getEntriesForDate(selectedDate).length === 0 ? (
               <Paragraph style={[styles.emptyText, { color: theme.colors.text }]}>
                 No entries for this date. Tap the + button to add one.
               </Paragraph>
             ) : (
               getEntriesForDate(selectedDate).map((entry) => (
-                <Card key={entry.id} style={[styles.entryCard, { backgroundColor: theme.colors.background }]}>
-                  <Card.Content>
+                <Surface key={entry.id} style={[styles.entryCard, { backgroundColor: theme.colors.background, borderRadius: scale(16), marginBottom: scale(12) }]}>
+                  <View style={{ padding: scale(16) }}>
                     <View style={styles.entryHeader}>
                       <Text style={[styles.entryMood, { color: theme.colors.primary }]}>
                         {entry.mood || 'No mood'}
@@ -279,12 +317,12 @@ const JournalScreen: React.FC<JournalScreenProps> = ({ navigation }) => {
                         }
                       </View>
                     )}
-                  </Card.Content>
-                </Card>
+                  </View>
+                </Surface>
               ))
             )}
-          </Card.Content>
-        </Card>
+          </View>
+        </Surface>
       </ScrollView>
 
       {/* Floating Action Button */}
@@ -370,22 +408,31 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    padding: 16,
-    paddingBottom: 80,
+    paddingBottom: scale(80),
   },
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: '700',
     textAlign: 'center',
-    marginBottom: 16,
+    marginBottom: scale(24),
+    letterSpacing: 0.5,
   },
-  card: {
-    marginBottom: 16,
+  modernCard: {
     elevation: 4,
+    overflow: 'hidden',
   },
   entryCard: {
-    marginBottom: 8,
     elevation: 2,
+  },
+  successOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
   },
   entryHeader: {
     flexDirection: 'row',

@@ -14,7 +14,7 @@ import {
 import * as TaskManager from 'expo-task-manager';
 import * as BackgroundFetch from 'expo-background-fetch';
 import NetInfo from '@react-native-community/netinfo';
-import { db } from '../firebase/config';
+import { db, auth as firebaseAuth } from '../firebase/config';
 import { databaseService } from '../database/db';
 
 export interface SyncStatus {
@@ -358,6 +358,11 @@ class SyncService {
     }
   }
 
+  // Push to Firebase (alias for backupNow)
+  async pushToFirebase(): Promise<boolean> {
+    return await this.backupNow();
+  }
+
   // Manual restore
   async restoreData(): Promise<boolean> {
     try {
@@ -374,6 +379,11 @@ class SyncService {
       console.error('Manual restore failed:', error);
       return false;
     }
+  }
+
+  // Pull from Firebase (alias for restoreData)
+  async pullFromFirebase(): Promise<boolean> {
+    return await this.restoreData();
   }
 
   // Get pending sync count
@@ -396,9 +406,16 @@ class SyncService {
 
   // Get current user (implement based on your auth system)
   private async getCurrentUser(): Promise<{ uid: string } | null> {
-    // This should return the current authenticated user
-    // Implement based on your auth system
-    return null;
+    try {
+      const currentUser = firebaseAuth.currentUser;
+      if (currentUser) {
+        return { uid: currentUser.uid };
+      }
+      return null;
+    } catch (error) {
+      console.error('Error getting current user:', error);
+      return null;
+    }
   }
 
   // Get sync status

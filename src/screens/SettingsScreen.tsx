@@ -1,27 +1,31 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, Alert } from 'react-native';
-import { 
-  Text, 
-  Card, 
-  Title, 
-  Button, 
-  List, 
+import { View, StyleSheet, ScrollView, Alert, TextInput as RNTextInput } from 'react-native';
+import {
+  Text,
+  Card,
+  Title,
+  Button,
+  List,
   Switch,
   Divider,
   ActivityIndicator,
-  Paragraph
+  Paragraph,
+  TextInput,
+  Portal,
+  Dialog,
 } from 'react-native-paper';
 import { useTheme } from '../context/ThemeContext';
 import { useUser } from '../context/UserContext';
 import { syncService, SyncStatus } from '../services/syncService';
+import NetInfo from '@react-native-community/netinfo';
 
 interface SettingsScreenProps {
   navigation: any;
 }
 
 const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
-  const { theme } = useTheme();
-  const { user, userProfile } = useUser();
+  const { theme, toggleTheme, isDark } = useTheme();
+  const { user, userProfile, updateProfile, deleteAccount } = useUser();
   const [syncStatus, setSyncStatus] = useState<SyncStatus>({
     isOnline: false,
     lastSync: null,
@@ -30,31 +34,58 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [autoSync, setAutoSync] = useState(true);
+  const [showAccountDialog, setShowAccountDialog] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [isSavingAccount, setIsSavingAccount] = useState(false);
 
   useEffect(() => {
     // Initialize sync service
     syncService.initialize();
 
     // Listen to sync status changes
-    const unsubscribe = syncService.addSyncListener((status) => {
+    const unsubscribeSync = syncService.addSyncListener((status) => {
       setSyncStatus(status);
     });
 
+    // Listen to network connectivity changes
+    const unsubscribeNetInfo = NetInfo.addEventListener((state) => {
+      const isConnected = state.isConnected ?? false;
+      if (isConnected && autoSync && !syncStatus.isSyncing) {
+        // Auto-sync when coming online
+        syncService.syncData().catch((error) => {
+          console.error('Auto-sync failed:', error);
+        });
+      }
+    });
+
+    // Initial network check
+    NetInfo.fetch().then((state) => {
+      const isConnected = state.isConnected ?? false;
+      if (isConnected && autoSync) {
+        syncService.syncData().catch((error) => {
+          console.error('Initial auto-sync failed:', error);
+        });
+      }
+    });
+
     return () => {
-      unsubscribe();
+      unsubscribeSync();
+      unsubscribeNetInfo();
     };
-  }, []);
+  }, [autoSync]);
 
   const handleBackupNow = async () => {
     setIsLoading(true);
     try {
-      const success = await syncService.backupNow();
+      const success = await syncService.pushToFirebase();
       if (success) {
-        Alert.alert('Success', 'Data backed up successfully!');
+        Alert.alert('Success', 'Data backed up successfully to Firebase!');
       } else {
         Alert.alert('Error', 'Failed to backup data. Please try again.');
       }
     } catch (error) {
+      console.error('Backup error:', error);
       Alert.alert('Error', 'Backup failed. Please check your connection.');
     } finally {
       setIsLoading(false);
@@ -64,7 +95,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
   const handleRestoreData = async () => {
     Alert.alert(
       'Restore Data',
-      'This will overwrite your local data with data from the cloud. Continue?',
+      'This will overwrite your local data with data from Firebase. Continue?',
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -73,13 +104,14 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
           onPress: async () => {
             setIsLoading(true);
             try {
-              const success = await syncService.restoreData();
+              const success = await syncService.pullFromFirebase();
               if (success) {
-                Alert.alert('Success', 'Data restored successfully!');
+                Alert.alert('Success', 'Data restored successfully from Firebase!');
               } else {
                 Alert.alert('Error', 'Failed to restore data. Please try again.');
               }
             } catch (error) {
+              console.error('Restore error:', error);
               Alert.alert('Error', 'Restore failed. Please check your connection.');
             } finally {
               setIsLoading(false);
@@ -90,33 +122,59 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
     );
   };
 
-  const handleForceSync = async () => {
-    setIsLoading(true);
-    try {
-      const result = await syncService.forceSync();
-      Alert.alert(
-        'Sync Complete',
-        `Local wins: ${result.localWins}\nRemote wins: ${result.remoteWins}\nMerged: ${result.merged}`
-      );
-    } catch (error) {
-      Alert.alert('Error', 'Sync failed. Please try again.');
-    } finally {
-      setIsLoading(false);
+  const handleManageAccount = () => {
+    if (userProfile) {
+      setEditName(userProfile.name);
+      setEditEmail(userProfile.email);
+      setShowAccountDialog(true);
     }
   };
 
-  const handleClearSyncFlags = () => {
+  const handleSaveAccount = async () => {
+    if (!editName.trim() || !editEmail.trim()) {
+      Alert.alert('Error', 'Please fill in all fields');
+      return;
+    }
+
+    if (!editEmail.includes('@')) {
+      Alert.alert('Error', 'Please enter a valid email address');
+      return;
+    }
+
+    setIsSavingAccount(true);
+    try {
+      await updateProfile({
+        name: editName.trim(),
+        email: editEmail.trim(),
+      });
+      setShowAccountDialog(false);
+      Alert.alert('Success', 'Account updated successfully!');
+    } catch (error) {
+      console.error('Update account error:', error);
+      Alert.alert('Error', 'Failed to update account. Please try again.');
+    } finally {
+      setIsSavingAccount(false);
+    }
+  };
+
+  const handleDeleteAccount = () => {
     Alert.alert(
-      'Clear Sync Flags',
-      'This will mark all records as synced. Use only if you\'re sure all data is up to date.',
+      'Delete Account',
+      'Are you sure you want to delete your account? This action cannot be undone and all your data will be permanently deleted.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Clear',
+          text: 'Delete',
           style: 'destructive',
           onPress: async () => {
-            await syncService.clearSyncFlags();
-            Alert.alert('Success', 'Sync flags cleared.');
+            try {
+              await deleteAccount();
+              Alert.alert('Success', 'Account deleted successfully');
+              // Navigation will be handled by auth state change
+            } catch (error) {
+              console.error('Delete account error:', error);
+              Alert.alert('Error', 'Failed to delete account. Please try again.');
+            }
           },
         },
       ]
@@ -126,6 +184,16 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
   const formatLastSync = (lastSync: string | null) => {
     if (!lastSync) return 'Never';
     const date = new Date(lastSync);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
     return date.toLocaleString();
   };
 
@@ -144,22 +212,40 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
   };
 
   return (
-    <ScrollView 
+    <ScrollView
       style={[styles.container, { backgroundColor: theme.colors.background }]}
       contentContainerStyle={styles.content}
     >
-      <Title style={[styles.title, { color: theme.colors.text }]}>
-        Settings
-      </Title>
+      <Title style={[styles.title, { color: theme.colors.text }]}>Settings</Title>
 
-      {/* User Info */}
+      {/* Account Section */}
       <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
         <Card.Content>
           <Title>Account</Title>
           <List.Item
             title={userProfile?.name || 'User'}
             description={userProfile?.email || user?.email}
-            left={props => <List.Icon {...props} icon="account" />}
+            left={(props) => <List.Icon {...props} icon="account" />}
+            right={(props) => (
+              <Button mode="text" onPress={handleManageAccount} textColor={theme.colors.primary}>
+                Manage
+              </Button>
+            )}
+          />
+        </Card.Content>
+      </Card>
+
+      {/* Theme Section */}
+      <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
+        <Card.Content>
+          <Title>Appearance</Title>
+          <List.Item
+            title="Dark Mode"
+            description={isDark ? 'Dark theme enabled' : 'Light theme enabled'}
+            left={(props) => <List.Icon {...props} icon={isDark ? 'weather-night' : 'weather-sunny'} />}
+            right={() => (
+              <Switch value={isDark} onValueChange={toggleTheme} color={theme.colors.primary} />
+            )}
           />
         </Card.Content>
       </Card>
@@ -169,35 +255,24 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
         <Card.Content>
           <Title>Sync Status</Title>
           <View style={styles.statusRow}>
-            <Text style={[styles.statusLabel, { color: theme.colors.text }]}>
-              Status:
-            </Text>
+            <Text style={[styles.statusLabel, { color: theme.colors.text }]}>Status:</Text>
             <View style={styles.statusIndicator}>
-              <View 
-                style={[
-                  styles.statusDot, 
-                  { backgroundColor: getSyncStatusColor() }
-                ]} 
-              />
+              <View style={[styles.statusDot, { backgroundColor: getSyncStatusColor() }]} />
               <Text style={[styles.statusText, { color: getSyncStatusColor() }]}>
                 {getSyncStatusText()}
               </Text>
             </View>
           </View>
-          
+
           <View style={styles.statusRow}>
-            <Text style={[styles.statusLabel, { color: theme.colors.text }]}>
-              Last Sync:
-            </Text>
+            <Text style={[styles.statusLabel, { color: theme.colors.text }]}>Last Backup:</Text>
             <Text style={[styles.statusValue, { color: theme.colors.text }]}>
               {formatLastSync(syncStatus.lastSync)}
             </Text>
           </View>
 
           <View style={styles.statusRow}>
-            <Text style={[styles.statusLabel, { color: theme.colors.text }]}>
-              Pending:
-            </Text>
+            <Text style={[styles.statusLabel, { color: theme.colors.text }]}>Pending:</Text>
             <Text style={[styles.statusValue, { color: theme.colors.text }]}>
               {syncStatus.pendingSync} records
             </Text>
@@ -209,11 +284,11 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
       <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
         <Card.Content>
           <Title>Data Sync</Title>
-          
+
           <List.Item
             title="Auto Sync"
             description="Automatically sync data when online"
-            left={props => <List.Icon {...props} icon="sync" />}
+            left={(props) => <List.Icon {...props} icon="sync" />}
             right={() => (
               <Switch
                 value={autoSync}
@@ -231,8 +306,9 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
             style={[styles.button, { backgroundColor: theme.colors.primary }]}
             disabled={isLoading || !syncStatus.isOnline}
             icon="cloud-upload"
+            loading={isLoading}
           >
-            {isLoading ? 'Backing Up...' : 'Back Up Now'}
+            Back Up Now
           </Button>
 
           <Button
@@ -244,45 +320,21 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
           >
             Restore Data
           </Button>
-
-          <Button
-            mode="outlined"
-            onPress={handleForceSync}
-            style={styles.button}
-            disabled={isLoading || !syncStatus.isOnline}
-            icon="sync"
-          >
-            Force Sync
-          </Button>
-
-          <Button
-            mode="text"
-            onPress={handleClearSyncFlags}
-            style={styles.button}
-            textColor={theme.colors.error || '#F44336'}
-            icon="flag-off"
-          >
-            Clear Sync Flags
-          </Button>
         </Card.Content>
       </Card>
 
-      {/* Sync Information */}
+      {/* Danger Zone */}
       <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
         <Card.Content>
-          <Title>Sync Information</Title>
-          <Paragraph style={[styles.infoText, { color: theme.colors.text }]}>
-            • Data is automatically synced when you're online
-          </Paragraph>
-          <Paragraph style={[styles.infoText, { color: theme.colors.text }]}>
-            • Changes are synced every 30 minutes in the background
-          </Paragraph>
-          <Paragraph style={[styles.infoText, { color: theme.colors.text }]}>
-            • Latest changes take priority in case of conflicts
-          </Paragraph>
-          <Paragraph style={[styles.infoText, { color: theme.colors.text }]}>
-            • All data is stored securely in Firebase
-          </Paragraph>
+          <Title style={{ color: '#F44336' }}>Danger Zone</Title>
+          <Button
+            mode="contained"
+            onPress={handleDeleteAccount}
+            style={[styles.button, { backgroundColor: '#F44336' }]}
+            icon="delete"
+          >
+            Delete Account
+          </Button>
         </Card.Content>
       </Card>
 
@@ -290,11 +342,55 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
       {isLoading && (
         <View style={styles.loadingOverlay}>
           <ActivityIndicator size="large" color={theme.colors.primary} />
-          <Text style={[styles.loadingText, { color: theme.colors.text }]}>
-            Processing...
-          </Text>
+          <Text style={[styles.loadingText, { color: theme.colors.text }]}>Processing...</Text>
         </View>
       )}
+
+      {/* Account Management Dialog */}
+      <Portal>
+        <Dialog visible={showAccountDialog} onDismiss={() => setShowAccountDialog(false)}>
+          <Dialog.Title>Manage Account</Dialog.Title>
+          <Dialog.Content>
+            <TextInput
+              label="Name"
+              value={editName}
+              onChangeText={setEditName}
+              mode="outlined"
+              style={styles.dialogInput}
+              theme={{
+                colors: {
+                  primary: theme.colors.primary,
+                },
+              }}
+            />
+            <TextInput
+              label="Email"
+              value={editEmail}
+              onChangeText={setEditEmail}
+              mode="outlined"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              style={styles.dialogInput}
+              theme={{
+                colors: {
+                  primary: theme.colors.primary,
+                },
+              }}
+            />
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => setShowAccountDialog(false)}>Cancel</Button>
+            <Button
+              onPress={handleSaveAccount}
+              mode="contained"
+              loading={isSavingAccount}
+              disabled={isSavingAccount}
+            >
+              Save
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
     </ScrollView>
   );
 };
@@ -349,11 +445,6 @@ const styles = StyleSheet.create({
   button: {
     marginBottom: 8,
   },
-  infoText: {
-    fontSize: 14,
-    marginBottom: 8,
-    opacity: 0.8,
-  },
   loadingOverlay: {
     position: 'absolute',
     top: 0,
@@ -367,6 +458,9 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 16,
     fontSize: 16,
+  },
+  dialogInput: {
+    marginBottom: 16,
   },
 });
 

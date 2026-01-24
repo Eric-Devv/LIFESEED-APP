@@ -36,11 +36,12 @@ export interface Journal {
   entry: string;
   mood: string;
   date: string;
+  tags?: string; // Stored as comma-separated string in DB
 }
 
 export interface Insight {
   id?: number;
-  type: string;
+  type: 'trend' | 'recommendation' | 'pattern' | 'achievement' | string;
   title: string;
   description: string;
   data?: string;
@@ -61,7 +62,7 @@ export class DatabaseService {
 
   async initDatabase(): Promise<void> {
     try {
-      this.db = await SQLite.openDatabaseAsync('lifeseed.db');
+      this.db = await (SQLite as any).openDatabaseAsync('lifeseed.db');
       await this.createTables();
       this.isInitialized = true;
       console.log('Database initialized successfully');
@@ -146,7 +147,7 @@ export class DatabaseService {
     ];
 
     for (const table of tables) {
-      await this.db.execAsync(table);
+      await (this.db as any).execAsync([table]);
     }
   }
 
@@ -165,9 +166,11 @@ export class DatabaseService {
       const values = Object.values(data);
 
       const query = `INSERT INTO ${table} (${columns}) VALUES (${placeholders})`;
-      const result = await this.db!.runAsync(query, values);
+      await (this.db as any).execAsync([{ sql: query, args: values }]);
       
-      return result.lastInsertRowId as number;
+      // Get the last insert row ID
+      const idResult = await (this.db as any).getFirstAsync('SELECT last_insert_rowid() as id') as { id: number } | undefined;
+      return idResult?.id || 0;
     } catch (error) {
       console.error(`Error inserting data into ${table}:`, error);
       throw error;
@@ -187,8 +190,8 @@ export class DatabaseService {
         values.push(...Object.values(filters));
       }
 
-      const result = await this.db!.getAllAsync(query, values);
-      return result;
+      const result = await (this.db as any).getAllAsync(query, values);
+      return (result || []) as any[];
     } catch (error) {
       console.error(`Error getting data from ${table}:`, error);
       throw error;
@@ -203,7 +206,8 @@ export class DatabaseService {
       const values = [...Object.values(data), id];
 
       const query = `UPDATE ${table} SET ${setClause} WHERE id = ?`;
-      await this.db!.runAsync(query, values);
+      // Use runAsync equivalent with execAsync
+      await (this.db as any).execAsync([{ sql: query, args: values }]);
     } catch (error) {
       console.error(`Error updating data in ${table}:`, error);
       throw error;
@@ -215,7 +219,7 @@ export class DatabaseService {
     
     try {
       const query = `DELETE FROM ${table} WHERE id = ?`;
-      await this.db!.runAsync(query, [id]);
+      await (this.db as any).execAsync([{ sql: query, args: [id] }]);
     } catch (error) {
       console.error(`Error deleting data from ${table}:`, error);
       throw error;
@@ -240,7 +244,7 @@ export class DatabaseService {
       const values = [...Object.values(updates), uid];
 
       const query = `UPDATE user SET ${setClause} WHERE uid = ?`;
-      await this.db!.runAsync(query, values);
+      await (this.db as any).execAsync([{ sql: query, args: values }]);
     } catch (error) {
       console.error('Error updating user:', error);
       throw error;
@@ -252,7 +256,7 @@ export class DatabaseService {
     
     try {
       const query = `DELETE FROM user WHERE uid = ?`;
-      await this.db!.runAsync(query, [uid]);
+      await (this.db as any).execAsync([{ sql: query, args: [uid] }]);
     } catch (error) {
       console.error('Error deleting user:', error);
       throw error;
@@ -359,7 +363,7 @@ export class DatabaseService {
     
     try {
       const query = `DELETE FROM ${table}`;
-      await this.db!.runAsync(query);
+      await (this.db as any).execAsync([query]);
     } catch (error) {
       console.error(`Error clearing table ${table}:`, error);
       throw error;
@@ -371,7 +375,8 @@ export class DatabaseService {
     
     try {
       const query = `PRAGMA table_info(${table})`;
-      return await this.db!.getAllAsync(query);
+      const result = await (this.db as any).getAllAsync(query, []);
+      return (result || []) as any[];
     } catch (error) {
       console.error(`Error getting table info for ${table}:`, error);
       throw error;

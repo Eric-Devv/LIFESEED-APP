@@ -40,7 +40,16 @@ const InsightsScreen: React.FC<InsightsScreenProps> = ({ navigation }) => {
     try {
       const cachedInsights = await getInsights();
       // Sort by creation date, newest first
-      const sorted = cachedInsights.sort(
+      // Convert database Insight to AI Insight format
+      const converted: Insight[] = cachedInsights.map((insight) => ({
+        id: insight.id,
+        type: insight.type as 'trend' | 'recommendation' | 'pattern' | 'achievement',
+        title: insight.title,
+        description: insight.description,
+        confidence: insight.confidence,
+        createdAt: insight.createdAt,
+      }));
+      const sorted = converted.sort(
         (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       );
       setInsights(sorted);
@@ -246,6 +255,8 @@ const InsightsScreen: React.FC<InsightsScreenProps> = ({ navigation }) => {
                   verticalLabelRotation={0}
                   style={styles.chart}
                   showValuesOnTopOfBars
+                  yAxisLabel=""
+                  yAxisSuffix=""
                 />
               </Card.Content>
             </Card>

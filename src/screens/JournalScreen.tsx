@@ -68,7 +68,12 @@ const JournalScreen: React.FC<JournalScreenProps> = ({ navigation }) => {
   const loadEntries = async () => {
     try {
       const journalEntries = await getJournalEntries();
-      setEntries(journalEntries);
+      // Convert Journal[] to JournalEntry[]
+      const convertedEntries: JournalEntry[] = journalEntries.map((j) => ({
+        ...j,
+        tags: j.tags ? (typeof j.tags === 'string' ? (j.tags as string).split(',').filter((t: string) => t.trim()) : []) : [],
+      }));
+      setEntries(convertedEntries);
     } catch (error) {
       console.error('Error loading journal entries:', error);
     }
@@ -89,7 +94,7 @@ const JournalScreen: React.FC<JournalScreenProps> = ({ navigation }) => {
           mood: currentEntry.mood,
           date: currentEntry.date,
           tags: currentEntry.tags.join(',')
-        });
+        } as any);
       } else {
         // Create new entry
         await createJournalEntry({
@@ -97,7 +102,7 @@ const JournalScreen: React.FC<JournalScreenProps> = ({ navigation }) => {
           mood: currentEntry.mood,
           date: currentEntry.date,
           tags: currentEntry.tags.join(',')
-        });
+        } as any);
       }
 
       await loadEntries();
@@ -131,11 +136,18 @@ const JournalScreen: React.FC<JournalScreenProps> = ({ navigation }) => {
 
   const handleEditEntry = (entry: JournalEntry) => {
     setEditingEntry(entry);
+    const entryTags: string | string[] | undefined = entry.tags;
+    let tagsArray: string[] = [];
+    if (Array.isArray(entryTags)) {
+      tagsArray = entryTags;
+    } else if (typeof entryTags === 'string') {
+      tagsArray = entryTags.split(',').filter((t: string) => t.trim());
+    }
     setCurrentEntry({
       entry: entry.entry,
       mood: entry.mood,
       date: entry.date,
-      tags: typeof entry.tags === 'string' ? entry.tags.split(',') : entry.tags
+      tags: tagsArray
     });
     setShowEntryDialog(true);
   };
@@ -236,7 +248,7 @@ const JournalScreen: React.FC<JournalScreenProps> = ({ navigation }) => {
             <Title style={{ fontSize: moderateScale(20, 0.3), marginBottom: scale(12) }}>Calendar</Title>
             <Calendar
               current={selectedDate}
-              onDayPress={(day) => setSelectedDate(day.dateString)}
+              onDayPress={(day: any) => setSelectedDate(day.dateString)}
               markedDates={{
                 ...getMarkedDates(),
                 [selectedDate]: {
@@ -301,11 +313,15 @@ const JournalScreen: React.FC<JournalScreenProps> = ({ navigation }) => {
                     <Text style={[styles.entryText, { color: theme.colors.text }]}>
                       {entry.entry}
                     </Text>
-                    {entry.tags && (
+                    {entry.tags && entry.tags.length > 0 && (
                       <View style={styles.tagsContainer}>
-                        {(typeof entry.tags === 'string' ? entry.tags.split(',') : entry.tags)
-                          .filter(tag => tag.trim())
-                          .map((tag, index) => (
+                        {(Array.isArray(entry.tags) 
+                          ? entry.tags 
+                          : (typeof entry.tags === 'string' 
+                            ? (entry.tags as string).split(',') 
+                            : []))
+                          .filter((tag: string) => tag && tag.trim())
+                          .map((tag: string, index: number) => (
                             <Chip
                               key={index}
                               style={[styles.tag, { backgroundColor: theme.colors.primary + '20' }]}

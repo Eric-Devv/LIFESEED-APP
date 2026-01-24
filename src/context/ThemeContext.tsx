@@ -1,7 +1,11 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Appearance } from 'react-native-appearance';
-import { DefaultTheme, DarkTheme } from 'react-native-paper';
+import { Appearance, useColorScheme } from 'react-native';
+import { MD3LightTheme, MD3DarkTheme, adaptNavigationTheme } from 'react-native-paper';
 import * as SecureStore from 'expo-secure-store';
+
+// Create themes compatible with react-native-paper v5
+const DefaultTheme = MD3LightTheme;
+const DarkTheme = MD3DarkTheme;
 
 export interface Theme {
   colors: {
@@ -10,6 +14,7 @@ export interface Theme {
     surface: string;
     text: string;
     accent: string;
+    error?: string;
   };
   dark: boolean;
 }
@@ -23,6 +28,7 @@ const lightTheme: Theme = {
     surface: '#F5F5F5',
     text: '#212121',
     accent: '#FF9800',
+    error: '#F44336',
   },
   dark: false,
 };
@@ -36,6 +42,7 @@ const darkTheme: Theme = {
     surface: '#1E1E1E',
     text: '#FFFFFF',
     accent: '#FFB74D',
+    error: '#CF6679',
   },
   dark: true,
 };

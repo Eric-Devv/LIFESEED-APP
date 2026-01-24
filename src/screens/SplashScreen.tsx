@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Animated, Text, Dimensions } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
-import * as SplashScreen from 'expo-splash-screen';
+import * as SplashScreenLib from 'expo-splash-screen';
 
 const { width, height } = Dimensions.get('window');
 

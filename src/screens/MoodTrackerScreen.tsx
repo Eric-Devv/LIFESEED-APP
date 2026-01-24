@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, Dimensions } from 'react-native';
+import { View, StyleSheet, ScrollView, Dimensions, Alert } from 'react-native';
 import { 
   Text, 
   Card, 
@@ -9,7 +9,8 @@ import {
   FAB,
   Portal,
   Dialog,
-  Paragraph
+  Paragraph,
+  TextInput
 } from 'react-native-paper';
 import { LineChart } from 'react-native-chart-kit';
 import { useTheme } from '../context/ThemeContext';

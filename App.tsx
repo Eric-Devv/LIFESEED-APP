@@ -139,13 +139,14 @@ const AppContent = () => {
     const checkOnboarding = async () => {
       if (!loading) {
         const completed = await hasCompletedOnboarding();
-        setShowOnboarding(!completed);
+        // Show onboarding only if not completed AND user is not logged in
+        setShowOnboarding(!completed && !user);
         setIsCheckingOnboarding(false);
       }
     };
 
     checkOnboarding();
-  }, [loading]);
+  }, [loading, user]);
 
   if (loading || isCheckingOnboarding) {
     return <LoadingSpinner message="Loading..." />;

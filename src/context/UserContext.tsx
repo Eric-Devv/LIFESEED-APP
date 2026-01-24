@@ -1,5 +1,12 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User as FirebaseUser, onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth';
+import { 
+  User as FirebaseUser, 
+  onAuthStateChanged, 
+  signOut as firebaseSignOut,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  sendPasswordResetEmail
+} from 'firebase/auth';
 import { doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
 import * as SecureStore from 'expo-secure-store';
 import { auth, db } from '../firebase/config';
@@ -58,11 +65,9 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             // Cache in SQLite
             if (isInitialized) {
               await createUser({
+                ...profile,
                 uid: profile.id,
-                email: profile.email,
-                name: profile.name,
-                createdAt: profile.createdAt,
-              });
+              } as any);
             }
 
             // Pull user data from Firestore
@@ -86,7 +91,6 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const signIn = async (email: string, password: string): Promise<void> => {
     try {
-      const { signInWithEmailAndPassword } = await import('firebase/auth');
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const token = await userCredential.user.getIdToken();
       
@@ -100,7 +104,6 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const signUp = async (email: string, password: string, name: string): Promise<void> => {
     try {
-      const { createUserWithEmailAndPassword } = await import('firebase/auth');
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
       
@@ -179,7 +182,6 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const resetPassword = async (email: string): Promise<void> => {
     try {
-      const { sendPasswordResetEmail } = await import('firebase/auth');
       await sendPasswordResetEmail(auth, email);
     } catch (error) {
       console.error('Reset password error:', error);

@@ -76,8 +76,8 @@ const HabitScreen: React.FC<HabitScreenProps> = ({ navigation }) => {
           streak: currentHabit.streak,
           lastUpdated: currentHabit.lastUpdated,
           targetDays: currentHabit.targetDays,
-          completedDates: currentHabit.completedDates
-        });
+          completedDates: currentHabit.completedDates ? JSON.stringify(currentHabit.completedDates) : undefined
+        } as any);
       } else {
         // Create new habit
         await createHabit({
@@ -85,8 +85,8 @@ const HabitScreen: React.FC<HabitScreenProps> = ({ navigation }) => {
           streak: currentHabit.streak,
           lastUpdated: currentHabit.lastUpdated,
           targetDays: currentHabit.targetDays,
-          completedDates: currentHabit.completedDates
-        });
+          completedDates: currentHabit.completedDates ? JSON.stringify(currentHabit.completedDates) : undefined
+        } as any);
       }
 
       await loadHabits();
@@ -154,10 +154,10 @@ const HabitScreen: React.FC<HabitScreenProps> = ({ navigation }) => {
       }
 
       await updateHabit(habitId, {
-        completedDates: newCompletedDates,
+        completedDates: JSON.stringify(newCompletedDates),
         streak: newStreak,
         lastUpdated: new Date().toISOString()
-      });
+      } as any);
 
       await loadHabits();
     } catch (error) {
@@ -312,7 +312,7 @@ const HabitScreen: React.FC<HabitScreenProps> = ({ navigation }) => {
             <Title>Habit Calendar</Title>
             <Calendar
               current={selectedDate}
-              onDayPress={(day) => setSelectedDate(day.dateString)}
+              onDayPress={(day: any) => setSelectedDate(day.dateString)}
               markedDates={getMarkedDates()}
               theme={{
                 backgroundColor: theme.colors.surface,

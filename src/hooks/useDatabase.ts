@@ -31,11 +31,11 @@ export const useDatabase = () => {
   }, []);
 
   // User methods
-  const createUser = async (user: Omit<User, 'uid'>) => {
+  const createUser = async (user: User | Omit<User, 'uid'>) => {
     if (!isInitialized) return null;
     try {
-      await databaseService.insertUser(user);
-      return user;
+      await databaseService.insertUser(user as User);
+      return user as User;
     } catch (error) {
       console.error('Error creating user:', error);
       return null;
